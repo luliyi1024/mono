@@ -1169,8 +1169,10 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 			exit (1);
 		}
 	}
-	else
+	else{
 		mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT loaded AOT Module for %s.\n", assembly->image->name);
+		x_log("AOT loaded AOT Module for %s.\n", assembly->image->name);
+	}
 }
 
 /*
