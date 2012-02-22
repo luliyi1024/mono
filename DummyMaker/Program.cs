@@ -67,12 +67,20 @@ namespace DummyMaker
                 System.Console.WriteLine(asType.Name);
                 foreach(MethodDefinition method in asType.Methods)
                 {
+                    System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
+
+                    if (method.RVA.Value == 0)
+                    {
+                        System.Console.WriteLine("(rva is 0, skip)");
+                        continue;
+                    }
+                    System.Console.WriteLine();
+
                     // RVA to offset
                     long offset = image.ResolveVirtualAddress(method.RVA);
                     offset += GetMethodHeaderSize(image, method);
                     long size = method.Body.CodeSize;
 
-                    System.Console.WriteLine("  + " + method.Name + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x"));
 
                     stream.Seek(offset, System.IO.SeekOrigin.Begin);
                    
