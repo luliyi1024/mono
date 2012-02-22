@@ -193,10 +193,12 @@ load_image (MonoAotModule *module, int index)
 		return NULL;
 	}
 
+	if (0){//lulu do not check the AOT guid
 	if (strcmp (assembly->image->guid, module->image_guids [index])) {
 		mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT module %s is out of date (Older than dependency %s).\n", module->aot_name, module->image_names [index].name);
 		module->out_of_date = TRUE;
 		return NULL;
+	}
 	}
 
 	module->image_table [index] = assembly->image;
@@ -941,7 +943,12 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 			sofile = load_aot_module_from_cache (assembly, &aot_name);
 		else {
 			char *err;
-			aot_name = g_strdup_printf ("%s%s", assembly->image->name, SHARED_EXT);
+
+			//lulu get the custom aot dll file name
+			//if return null, use orig one
+			aot_name = x_get_aot_dll_name(assembly->image->name);
+			if (!aot_name)
+				aot_name = g_strdup_printf ("%s%s", assembly->image->name, SHARED_EXT);
 
 			sofile = mono_dl_open (aot_name, MONO_DL_LAZY, &err);
 
@@ -972,9 +979,11 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 		usable = FALSE;
 	}
 	else {
+		if (0){//lulu do not check the AOT guid
 		if (!saved_guid || strcmp (assembly->image->guid, saved_guid)) {
 			mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT module %s is out of date.\n", aot_name);
 			usable = FALSE;
+		}
 		}
 	}
 

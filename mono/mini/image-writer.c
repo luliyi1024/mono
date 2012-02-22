@@ -1542,7 +1542,9 @@ asm_writer_emit_local_symbol (MonoImageWriter *acfg, const char *name, const cha
 	asm_writer_emit_unset_mode (acfg);
 
 #ifndef TARGET_ASM_APPLE
+#ifndef PLATFORM_WIN32//lulu .local not for win32
 	fprintf (acfg->fp, "\t.local %s\n", name);
+#endif//lulu
 #endif
 
 	asm_writer_emit_symbol_type (acfg, name, func);
@@ -1554,7 +1556,9 @@ asm_writer_emit_symbol_size (MonoImageWriter *acfg, const char *name, const char
 	asm_writer_emit_unset_mode (acfg);
 
 #ifndef TARGET_ASM_APPLE
+#ifndef PLATFORM_WIN32//lulu .size not for win32
 	fprintf (acfg->fp, "\t.size %s,%s-%s\n", name, end_label, name);
+#endif//lulu
 #endif
 }
 

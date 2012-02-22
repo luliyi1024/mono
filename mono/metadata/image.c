@@ -42,6 +42,8 @@
 #include <unistd.h>
 #endif
 
+#include <mono/utils/lululog.h>//lulu
+
 #define INVALID_ADDRESS 0xffffffff
 
 /*
@@ -1068,7 +1070,7 @@ register_image (MonoImage *image)
 }
 
 MonoImage *
-mono_image_open_from_data_with_name (char *data, guint32 data_len, gboolean need_copy, MonoImageOpenStatus *status, gboolean refonly, const char *name)
+mono_image_open_from_data_with_name_internal (char *data, guint32 data_len, gboolean need_copy, MonoImageOpenStatus *status, gboolean refonly, const char *name)
 {
 	MonoCLIImageInfo *iinfo;
 	MonoImage *image;
@@ -1104,6 +1106,24 @@ mono_image_open_from_data_with_name (char *data, guint32 data_len, gboolean need
 		return NULL;
 
 	return register_image (image);
+}
+
+MonoImage *
+mono_image_open_from_data_with_name (char *data, guint32 data_len, gboolean need_copy, MonoImageOpenStatus *status, gboolean refonly, const char *name)
+{
+	//lulu
+	x_log("mono_image_open_from_data_with_name: %s\n",name);
+	
+	//lulu add owner image load method.
+	if (x_is_image_buffer_valid(data,data_len) == 0){
+		unsigned int len = 0;
+		char* buffer = x_load_owner_image_buffer(name,&len);
+		MonoImage *img = mono_image_open_from_data_with_name_internal(buffer,len,need_copy,status,refonly,name);
+		x_release_image_buffer(buffer);
+		return img;
+	}
+
+	return mono_image_open_from_data_with_name_internal(data,data_len,need_copy,status,refonly,name);
 }
 
 MonoImage *
@@ -1150,6 +1170,9 @@ mono_image_open_full (const char *fname, MonoImageOpenStatus *status, gboolean r
 	GHashTable *loaded_images;
 	char *absfname;
 	
+	//lulu
+	x_log("mono_image_open_full: %s\n",fname);
+
 	g_return_val_if_fail (fname != NULL, NULL);
 	
 #ifdef USE_COREE
