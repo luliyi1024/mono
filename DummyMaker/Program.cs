@@ -31,6 +31,11 @@ namespace DummyMaker
             return headerSize;
         }
 
+        private static string GetMethodFullName(MethodDefinition method)
+        {
+            return method.Name;
+        }
+
         static void Main(string[] args)
         {
             if (args.Length <= 0)
@@ -40,6 +45,21 @@ namespace DummyMaker
             }
 
             string assemblyName = args[0];
+
+            System.Collections.Generic.Dictionary<string,string> methodMap = new Dictionary<string,string>();
+
+            // 是否从指定文件中获取需要处理的函数列表
+            bool useDefinedMethods = false;
+
+            if (args.Length >= 2)
+            {
+                string[] methods = System.IO.File.ReadAllLines(args[1]);
+                foreach (string s in methods)
+                {
+                    methodMap.Add(s, s);
+                }
+                useDefinedMethods = true;
+            }
 
             AssemblyDefinition assembly;
 
@@ -67,11 +87,16 @@ namespace DummyMaker
                 System.Console.WriteLine(asType.Name);
                 foreach(MethodDefinition method in asType.Methods)
                 {
+                    string methodFullName = GetMethodFullName(method);
+
+                    if (useDefinedMethods && methodMap.ContainsKey(methodFullName))
+                        continue;
+
                     System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
 
                     if (method.RVA.Value == 0)
                     {
-                        System.Console.WriteLine("(rva is 0, skip)");
+                        System.Console.WriteLine("(RVA is 0, skip)");
                         continue;
                     }
                     System.Console.WriteLine();
@@ -83,10 +108,11 @@ namespace DummyMaker
 
 
                     stream.Seek(offset, System.IO.SeekOrigin.Begin);
-                   
-                    for (int i = 0; i < size; ++i)
+
+                    stream.WriteByte(0xEE);
+                    for (int i = 1; i < size; ++i)
                     {
-                        stream.WriteByte((byte)random.Next(256));
+                        stream.WriteByte((byte)random.Next(128));
                     }
                     stream.Flush();
                 }

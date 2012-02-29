@@ -7,7 +7,7 @@ namespace HelloWorld
         static void Main(string[] args)
         {
             TestClass t = new TestClass();
-            int c = t.IntAdd(5,5);
+            int c = t.IntAdd(5,4);
             t.PrintT<int>(c);
         }
     }
