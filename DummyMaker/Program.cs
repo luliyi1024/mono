@@ -31,9 +31,82 @@ namespace DummyMaker
             return headerSize;
         }
 
-        private static string GetMethodFullName(MethodDefinition method)
+        private static string GetSystemTypeName(string fullname)
         {
-            return method.Name;
+            if (fullname == "System.Void") return "void";
+
+            else if (fullname == "System.Char") return "char";
+            else if (fullname == "System.Boolean") return "bool";
+            else if (fullname == "System.Byte") return "byte";
+            else if (fullname == "System.SByte") return "sbyte";
+            else if (fullname == "System.UInt16") return "uint16";
+            else if (fullname == "System.Int16") return "int16";
+            else if (fullname == "System.UInt32") return "uint";
+            else if (fullname == "System.Int32") return "int";
+            else if (fullname == "System.UInt64") return "ulong";
+            else if (fullname == "System.Int64") return "long";
+            else if (fullname == "System.UIntPtr") return "uintptr";
+            else if (fullname == "System.IntPtr") return "intptr";
+            else if (fullname == "System.Single") return "single";
+            else if (fullname == "System.Double") return "double";
+            else if (fullname == "System.String") return "string";
+            else if (fullname == "System.Object") return "object";
+
+            else if (fullname == "System.Char[]") return "char[]";
+            else if (fullname == "System.Boolean[]") return "bool[]";
+            else if (fullname == "System.Byte[]") return "byte[]";
+            else if (fullname == "System.SByte[]") return "sbyte[]";
+            else if (fullname == "System.UInt16[]") return "uint16[]";
+            else if (fullname == "System.Int16[]") return "int16[]";
+            else if (fullname == "System.UInt32[]") return "uint[]";
+            else if (fullname == "System.Int32[]") return "int[]";
+            else if (fullname == "System.UInt64[]") return "ulong[]";
+            else if (fullname == "System.Int64[]") return "long[]";
+            else if (fullname == "System.UIntPtr[]") return "uintptr[]";
+            else if (fullname == "System.IntPtr[]") return "intptr[]";
+            else if (fullname == "System.Single[]") return "single[]";
+            else if (fullname == "System.Double[]") return "double[]";
+            else if (fullname == "System.String[]") return "string[]";
+            else if (fullname == "System.Object[]") return "object[]";
+
+            else return fullname;
+        }
+
+        private static string GetParameterTypeName(ParameterDefinition param)
+        {
+            if (param.ParameterType is GenericInstanceType)
+            {
+                GenericInstanceType gtype = param.ParameterType as GenericInstanceType;
+                string fullname = gtype.Namespace + "." + gtype.Name+"<";
+                for (int i = 0; i < gtype.GenericArguments.Count; i++)
+                {
+                    TypeReference argType = gtype.GenericArguments[i];
+                    fullname += GetSystemTypeName(argType.FullName);
+                    if (i != (gtype.GenericArguments.Count - 1))
+                        fullname += ", ";
+                }
+                fullname += ">";
+                return fullname;
+            }
+            else 
+                return GetSystemTypeName(param.ParameterType.FullName);
+        }
+
+        private static string GetMethodFullName(TypeDefinition type, MethodDefinition method)
+        {
+            string fullname = type.FullName + ":"+method.Name+" (";
+
+            for (int i = 0; i < method.Parameters.Count; i++)
+            {
+                ParameterDefinition param = method.Parameters[i];
+
+                fullname += GetParameterTypeName(param);
+                if (i != (method.Parameters.Count - 1))
+                    fullname += ",";
+            }
+
+            fullname += ")";
+            return fullname;
         }
 
         static void Main(string[] args)
@@ -56,9 +129,15 @@ namespace DummyMaker
                 string[] methods = System.IO.File.ReadAllLines(args[1]);
                 foreach (string s in methods)
                 {
-                    methodMap.Add(s, s);
+                    string prefix = "Compile:           ";
+                    if (s.Substring(0, prefix.Length) == prefix)
+                    {
+                        string methodFullname = s.Substring(prefix.Length);
+                        methodMap.Add(methodFullname, methodFullname);
+                    }
                 }
                 useDefinedMethods = true;
+                System.Console.WriteLine("Find " + methodMap.Count + " methods in define file.");
             }
 
             AssemblyDefinition assembly;
@@ -78,34 +157,51 @@ namespace DummyMaker
 
             Mono.Cecil.Binary.Image image = Mono.Cecil.Binary.Image.GetImage(assemblyName);
 
-            System.Console.WriteLine(assembly.Name);
+            System.Console.WriteLine("Assembly: " + assembly.Name);
+            System.Console.WriteLine();
 
             Random random = new Random();
 
+            int methodRewrited = 0;
+            int methodTotel = 0;
+
             foreach (Mono.Cecil.TypeDefinition asType in assembly.MainModule.Types)
             {
-                System.Console.WriteLine(asType.Name);
-                foreach(MethodDefinition method in asType.Methods)
+                System.Console.WriteLine("----Type:" + asType.FullName+"----");
+
+                System.Collections.ArrayList methodList = new System.Collections.ArrayList(asType.Constructors);
+                methodList.AddRange(asType.Methods);
+
+                methodTotel += methodList.Count;
+
+                foreach (MethodDefinition method in methodList)
                 {
-                    string methodFullName = GetMethodFullName(method);
+                    string methodFullName = GetMethodFullName(asType,method);
 
                     if (useDefinedMethods && methodMap.ContainsKey(methodFullName))
+                    {
+                        System.Console.WriteLine(methodFullName);
+                        methodRewrited++;
+                    }
+                    else
+                    {
+                        System.Console.WriteLine("!Skip    " + methodFullName);
                         continue;
+                    }
 
-                    System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
+                    //System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
 
                     if (method.RVA.Value == 0)
                     {
                         System.Console.WriteLine("(RVA is 0, skip)");
                         continue;
                     }
-                    System.Console.WriteLine();
+                    //System.Console.WriteLine();
 
                     // RVA to offset
                     long offset = image.ResolveVirtualAddress(method.RVA);
                     offset += GetMethodHeaderSize(image, method);
                     long size = method.Body.CodeSize;
-
 
                     stream.Seek(offset, System.IO.SeekOrigin.Begin);
 
@@ -116,10 +212,15 @@ namespace DummyMaker
                     }
                     stream.Flush();
                 }
-                System.Console.WriteLine();
             }
 
             stream.Close();
+
+            System.Console.WriteLine();
+            System.Console.WriteLine("methodTotel: " + methodTotel + "    methodRewrited: " + methodRewrited);
+            float percent = methodRewrited * 100 / methodTotel;
+            System.Console.WriteLine(percent+"% methods rewrited.");
+
             string dummyName = "dummy_" + assemblyName;
             System.IO.File.WriteAllBytes(dummyName,dummyBuffer);
             System.Console.WriteLine(dummyName+" is writed.");
