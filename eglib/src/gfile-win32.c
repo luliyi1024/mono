@@ -54,8 +54,7 @@ int mkstemp (char *tmp_template)
 	utf16_template = _wmktemp( utf16_template);
 	if (utf16_template && *utf16_template) {
 		/* FIXME: _O_TEMPORARY causes file to disappear on close causing a test to fail */
-		//lulu
-		//add _O_RDWR for windows. otherwise will call err ERROR_ACCESS_DENIED when write to file.
+		//lulu add _O_RDWR for windows. otherwise will call err ERROR_ACCESS_DENIED when write to file.
 		//fd = _wopen( utf16_template, _O_BINARY | _O_CREAT /*| _O_TEMPORARY*/ | _O_EXCL, _S_IREAD | _S_IWRITE);
 		fd = _wopen( utf16_template, _O_BINARY | _O_CREAT /*| _O_TEMPORARY*/ | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 	}

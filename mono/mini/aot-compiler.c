@@ -3963,8 +3963,7 @@ compile_method (MonoAotCompile *acfg, MonoMethod *method)
 	}
 #endif
 
-	//lulu enable it
-	acfg->aot_opts.print_skipped_methods = TRUE;
+	acfg->aot_opts.print_skipped_methods = TRUE;//lulu enable it
 
 	/*
 	 * Since these methods are the only ones which are compiled with
@@ -4178,8 +4177,7 @@ compile_method (MonoAotCompile *acfg, MonoMethod *method)
 		cfg->rs = NULL;
 	}
 
-	//lulu enable it
-	printf ("Compile:           %s\n", mono_method_full_name (method, TRUE));
+	printf ("Compile:           %s\n", mono_method_full_name (method, TRUE));	//lulu enable it
 
 	while (index >= acfg->cfgs_size) {
 		MonoCompile **new_cfgs;
@@ -5583,8 +5581,7 @@ compile_asm (MonoAotCompile *acfg)
 #elif defined(__ppc__) && defined(__MACH__)
 	command = g_strdup_printf ("gcc -dynamiclib -o %s %s.o", tmp_outfile_name, acfg->tmpfname);
 #elif defined(PLATFORM_WIN32)
-	//lulu
-	//remove --dll -mno-cygwin for mingw
+	//lulu remove --dll -mno-cygwin for mingw
 	//command = g_strdup_printf ("gcc -shared --dll -mno-cygwin -o %s %s.o", tmp_outfile_name, acfg->tmpfname);
 	command = g_strdup_printf ("gcc -shared -o %s %s.o", tmp_outfile_name, acfg->tmpfname);
 #else
@@ -5729,8 +5726,7 @@ mono_compile_assembly (MonoAssembly *ass, guint32 opts, const char *aot_options)
 
 	mono_aot_parse_options (aot_options, &acfg->aot_opts);
 
-	//lulu enable it
-	acfg->aot_opts.print_skipped_methods = TRUE;
+	acfg->aot_opts.print_skipped_methods = TRUE;//lulu enable it
 
 #ifndef MONO_ARCH_HAVE_FULL_AOT_TRAMPOLINES
 	if (acfg->aot_opts.full_aot) {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Mono.Cecil;
+using System.Collections;
 
 namespace DummyMaker
 {
@@ -77,6 +78,7 @@ namespace DummyMaker
             if (param.ParameterType is GenericInstanceType)
             {
                 GenericInstanceType gtype = param.ParameterType as GenericInstanceType;
+
                 string fullname = gtype.Namespace + "." + gtype.Name+"<";
                 for (int i = 0; i < gtype.GenericArguments.Count; i++)
                 {
@@ -92,8 +94,9 @@ namespace DummyMaker
                 return GetSystemTypeName(param.ParameterType.FullName);
         }
 
-        private static string GetMethodFullName(TypeDefinition type, MethodDefinition method)
+        private static string GetMethodFullName(MethodDefinition method)
         {
+            TypeDefinition type = method.DeclaringType;
             string fullname = type.FullName + ":"+method.Name+" (";
 
             for (int i = 0; i < method.Parameters.Count; i++)
@@ -109,6 +112,38 @@ namespace DummyMaker
             return fullname;
         }
 
+        private static Dictionary<string, string> ReadDefMethodMap(string defFile) 
+        {
+            Dictionary<string, string> methodMap = new Dictionary<string, string>();
+            string[] methods = System.IO.File.ReadAllLines(defFile);
+            foreach (string s in methods)
+            {
+                string prefix = "Compile:           ";
+                if (s.Substring(0, prefix.Length) == prefix)
+                {
+                    string methodFullname = s.Substring(prefix.Length);
+                    if (!methodMap.ContainsKey(methodFullname))
+                        methodMap.Add(methodFullname, methodFullname);
+                }
+            }
+            System.Console.WriteLine("Find " + methodMap.Count + " methods in define file.");
+            return methodMap;
+        }
+
+        private static ArrayList CollectMethods(AssemblyDefinition assembly)
+        {
+            ArrayList methodList = new ArrayList();
+
+            foreach (TypeDefinition asType in assembly.MainModule.Types)
+            {
+                //System.Console.WriteLine("---- "+asType.FullName);
+                methodList.AddRange(asType.Constructors);
+                methodList.AddRange(asType.Methods);
+            }
+
+            return methodList;
+        }
+
         static void Main(string[] args)
         {
             if (args.Length <= 0)
@@ -119,25 +154,23 @@ namespace DummyMaker
 
             string assemblyName = args[0];
 
-            System.Collections.Generic.Dictionary<string,string> methodMap = new Dictionary<string,string>();
+            Dictionary<string,string> defMethodMap = null;
 
             // 是否从指定文件中获取需要处理的函数列表
             bool useDefinedMethods = false;
 
             if (args.Length >= 2)
             {
-                string[] methods = System.IO.File.ReadAllLines(args[1]);
-                foreach (string s in methods)
+                try
                 {
-                    string prefix = "Compile:           ";
-                    if (s.Substring(0, prefix.Length) == prefix)
-                    {
-                        string methodFullname = s.Substring(prefix.Length);
-                        methodMap.Add(methodFullname, methodFullname);
-                    }
+                    defMethodMap = ReadDefMethodMap(args[1]);
+                    useDefinedMethods = true;
                 }
-                useDefinedMethods = true;
-                System.Console.WriteLine("Find " + methodMap.Count + " methods in define file.");
+                catch (Exception e)
+                {
+                    System.Console.WriteLine(e.Message);
+                    return;
+                }
             }
 
             AssemblyDefinition assembly;
@@ -152,10 +185,12 @@ namespace DummyMaker
                 return;
             }
 
+            Mono.Cecil.Binary.Image image = assembly.MainModule.Image;
+
+            ArrayList methodList = CollectMethods(assembly);
+
             byte[] dummyBuffer = System.IO.File.ReadAllBytes(assemblyName);
             System.IO.Stream stream = new System.IO.MemoryStream(dummyBuffer);
-
-            Mono.Cecil.Binary.Image image = Mono.Cecil.Binary.Image.GetImage(assemblyName);
 
             System.Console.WriteLine("Assembly: " + assembly.Name);
             System.Console.WriteLine();
@@ -163,62 +198,50 @@ namespace DummyMaker
             Random random = new Random();
 
             int methodRewrited = 0;
-            int methodTotel = 0;
 
-            foreach (Mono.Cecil.TypeDefinition asType in assembly.MainModule.Types)
+            foreach (MethodDefinition method in methodList)
             {
-                System.Console.WriteLine("----Type:" + asType.FullName+"----");
+                string methodFullName = GetMethodFullName(method);
 
-                System.Collections.ArrayList methodList = new System.Collections.ArrayList(asType.Constructors);
-                methodList.AddRange(asType.Methods);
-
-                methodTotel += methodList.Count;
-
-                foreach (MethodDefinition method in methodList)
+                if (useDefinedMethods && defMethodMap.ContainsKey(methodFullName))
                 {
-                    string methodFullName = GetMethodFullName(asType,method);
-
-                    if (useDefinedMethods && methodMap.ContainsKey(methodFullName))
-                    {
-                        System.Console.WriteLine(methodFullName);
-                        methodRewrited++;
-                    }
-                    else
-                    {
-                        System.Console.WriteLine("!Skip    " + methodFullName);
-                        continue;
-                    }
-
-                    //System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
-
-                    if (method.RVA.Value == 0)
-                    {
-                        System.Console.WriteLine("(RVA is 0, skip)");
-                        continue;
-                    }
-                    //System.Console.WriteLine();
-
-                    // RVA to offset
-                    long offset = image.ResolveVirtualAddress(method.RVA);
-                    offset += GetMethodHeaderSize(image, method);
-                    long size = method.Body.CodeSize;
-
-                    stream.Seek(offset, System.IO.SeekOrigin.Begin);
-
-                    stream.WriteByte(0xEE);
-                    for (int i = 1; i < size; ++i)
-                    {
-                        stream.WriteByte((byte)random.Next(128));
-                    }
-                    stream.Flush();
+                    System.Console.WriteLine(methodFullName);
+                    methodRewrited++;
                 }
+                else
+                {
+                    System.Console.WriteLine("!Skip    " + methodFullName);
+                    continue;
+                }
+
+                //System.Console.Write("  + " + method.Name/* + ":" + method.RVA.Value.ToString("x") + ":" + offset.ToString("x")*/);
+
+                if (method.RVA.Value == 0)
+                {
+                    System.Console.WriteLine("(RVA is 0, skip)");
+                    continue;
+                }
+
+                // RVA to offset
+                long offset = image.ResolveVirtualAddress(method.RVA);
+                offset += GetMethodHeaderSize(image, method);
+                long size = method.Body.CodeSize;
+
+                stream.Seek(offset, System.IO.SeekOrigin.Begin);
+
+                stream.WriteByte(0xEE);
+                for (int i = 1; i < size; ++i)
+                {
+                    stream.WriteByte((byte)random.Next(128));
+                }
+                stream.Flush();
             }
 
             stream.Close();
 
             System.Console.WriteLine();
-            System.Console.WriteLine("methodTotel: " + methodTotel + "    methodRewrited: " + methodRewrited);
-            float percent = methodRewrited * 100 / methodTotel;
+            System.Console.WriteLine("methodTotel: " + methodList.Count + "    methodRewrited: " + methodRewrited);
+            float percent = methodRewrited * 100 / methodList.Count;
             System.Console.WriteLine(percent+"% methods rewrited.");
 
             string dummyName = "dummy_" + assemblyName;

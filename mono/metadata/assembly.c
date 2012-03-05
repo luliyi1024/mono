@@ -1563,8 +1563,7 @@ MonoAssembly *
 mono_assembly_load_from (MonoImage *image, const char *fname,
 			 MonoImageOpenStatus *status)
 {
-	//lulu
-	x_log("mono_assembly_load_from: %s\n",fname);
+	x_log(XLOG_LOG,"mono_assembly_load_from: %s\n",fname);//lulu log
 
 	return mono_assembly_load_from_full (image, fname, status, FALSE);
 }

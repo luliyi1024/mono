@@ -1,5 +1,4 @@
-//lulu
-//add for additive functions
+//lulu add for additive functions
 #include "lululog.h"
 #include <stdio.h>
 #include <stddef.h>
@@ -11,8 +10,9 @@
 static FILE *g_logfile = 0;
 
 void
-x_log(const char *format, ...)
+x_log(int flag, const char *format, ...)
 {
+	char* flagStr = "";
 	va_list args;
 	va_start (args, format);
 
@@ -20,6 +20,14 @@ x_log(const char *format, ...)
 		g_logfile = fopen("lululog.txt","w");
 	}
 
+	switch(flag){
+		case XLOG_OK:flagStr =      "[OK]      ";break;
+		case XLOG_FAILED:flagStr =  "[FAILED]  ";break;
+		case XLOG_WARNING:flagStr = "[WARNING] ";break;
+		case XLOG_LOG:flagStr =     "[LOG]     ";break;
+	}
+
+	fprintf(g_logfile,flagStr);
 	vfprintf(g_logfile,format,args);
 	va_end (args);
 
@@ -61,7 +69,7 @@ char* x_load_owner_image_buffer(const char *name, unsigned int *size)
 	*size = ftell(fp);
 	fseek(fp,0,SEEK_SET);
 
-	x_log("replace file mono_image_open: %s %d\n",new_name,*size);
+	x_log(XLOG_LOG,"replace file mono_image_open: %s %d\n",new_name,*size);
 
 	buffer = malloc(*size);
 

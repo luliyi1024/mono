@@ -4233,7 +4233,7 @@ mono_jit_compile_method_inner (MonoMethod *method, MonoDomain *target_domain, in
 	//lulu check the method IL byte code
 	//if byte[0]==0xEE then use AOT native code
 	//else use JIT code
-	if (opt & MONO_OPT_AOT) {
+/*	if (opt & MONO_OPT_AOT) {
 		MonoMethodHeader *header = mono_method_get_header(method);
 		if (header && header->code){
 			if (header->code[0] == 0xEE){
@@ -4250,9 +4250,9 @@ mono_jit_compile_method_inner (MonoMethod *method, MonoDomain *target_domain, in
 				}
 			}
 		}
-	}
+	}*/
 
-/*	if (opt & MONO_OPT_AOT) {
+	if (opt & MONO_OPT_AOT) {
 		MonoDomain *domain = mono_domain_get ();
 
 		mono_class_init (method->klass);
@@ -4264,7 +4264,7 @@ mono_jit_compile_method_inner (MonoMethod *method, MonoDomain *target_domain, in
 
 			return code;
 		}
-	}*/
+	}
 #endif
 
 	if ((method->iflags & METHOD_IMPL_ATTRIBUTE_INTERNAL_CALL) ||

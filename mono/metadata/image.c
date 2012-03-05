@@ -1111,19 +1111,26 @@ mono_image_open_from_data_with_name_internal (char *data, guint32 data_len, gboo
 MonoImage *
 mono_image_open_from_data_with_name (char *data, guint32 data_len, gboolean need_copy, MonoImageOpenStatus *status, gboolean refonly, const char *name)
 {
-	//lulu
-	x_log("mono_image_open_from_data_with_name: %s\n",name);
-	
 	//lulu add owner image load method.
+	MonoImage *img = 0;
+
 	if (x_is_image_buffer_valid(data,data_len) == 0){
 		unsigned int len = 0;
 		char* buffer = x_load_owner_image_buffer(name,&len);
-		MonoImage *img = mono_image_open_from_data_with_name_internal(buffer,len,need_copy,status,refonly,name);
+		img = mono_image_open_from_data_with_name_internal(buffer,len,need_copy,status,refonly,name);
 		x_release_image_buffer(buffer);
+
+		if (img != 0) x_log(XLOG_OK,"(owner image) mono_image_open_from_data_with_name: %s\n",name);
+		else x_log(XLOG_FAILED,"(owner image) mono_image_open_from_data_with_name: %s\n",name);
+
 		return img;
 	}
 
-	return mono_image_open_from_data_with_name_internal(data,data_len,need_copy,status,refonly,name);
+	img = mono_image_open_from_data_with_name_internal(data,data_len,need_copy,status,refonly,name);
+	if (img != 0) x_log(XLOG_OK,"mono_image_open_from_data_with_name: %s\n",name);
+	else x_log(XLOG_FAILED,"mono_image_open_from_data_with_name: %s\n",name);
+
+	return img;
 }
 
 MonoImage *
@@ -1170,9 +1177,6 @@ mono_image_open_full (const char *fname, MonoImageOpenStatus *status, gboolean r
 	GHashTable *loaded_images;
 	char *absfname;
 	
-	//lulu
-	x_log("mono_image_open_full: %s\n",fname);
-
 	g_return_val_if_fail (fname != NULL, NULL);
 	
 #ifdef USE_COREE
@@ -1257,11 +1261,19 @@ mono_image_open_full (const char *fname, MonoImageOpenStatus *status, gboolean r
 	if (image){
 		mono_image_addref (image);
 		mono_images_unlock ();
+
+		//x_log(XLOG_OK,"(cached) mono_image_open_full: %s\n",fname);//lulu log
+
 		return image;
 	}
 	mono_images_unlock ();
 
 	image = do_mono_image_open (fname, status, TRUE, TRUE, refonly);
+
+	//lulu log
+	if (image != NULL) x_log(XLOG_OK,"(load) mono_image_open_full: %s\n",fname);
+	else x_log(XLOG_FAILED,"mono_image_open_full: %s\n",fname);
+
 	if (image == NULL)
 		return NULL;
 
