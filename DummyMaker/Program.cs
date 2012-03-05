@@ -32,7 +32,25 @@ namespace DummyMaker
             return headerSize;
         }
 
-        private static string GetSystemTypeName(string fullname)
+        private static string GetSystemTypeName(TypeReference typeRef)
+        {
+            if (typeRef is ArrayType)
+            {
+                ArrayType atype = typeRef as ArrayType;
+                return GetSystemTypeNameString(atype.ElementType.FullName)+"[]";
+            }
+            else if (typeRef is ReferenceType)
+            {
+                ReferenceType rtype = typeRef as ReferenceType;
+                return GetSystemTypeNameString(rtype.ElementType.FullName) + "&";
+            }
+            else
+            {
+                return GetSystemTypeNameString(typeRef.FullName);
+            }
+        }
+
+        private static string GetSystemTypeNameString(string fullname)
         {
             if (fullname == "System.Void") return "void";
 
@@ -53,23 +71,6 @@ namespace DummyMaker
             else if (fullname == "System.String") return "string";
             else if (fullname == "System.Object") return "object";
 
-            else if (fullname == "System.Char[]") return "char[]";
-            else if (fullname == "System.Boolean[]") return "bool[]";
-            else if (fullname == "System.Byte[]") return "byte[]";
-            else if (fullname == "System.SByte[]") return "sbyte[]";
-            else if (fullname == "System.UInt16[]") return "uint16[]";
-            else if (fullname == "System.Int16[]") return "int16[]";
-            else if (fullname == "System.UInt32[]") return "uint[]";
-            else if (fullname == "System.Int32[]") return "int[]";
-            else if (fullname == "System.UInt64[]") return "ulong[]";
-            else if (fullname == "System.Int64[]") return "long[]";
-            else if (fullname == "System.UIntPtr[]") return "uintptr[]";
-            else if (fullname == "System.IntPtr[]") return "intptr[]";
-            else if (fullname == "System.Single[]") return "single[]";
-            else if (fullname == "System.Double[]") return "double[]";
-            else if (fullname == "System.String[]") return "string[]";
-            else if (fullname == "System.Object[]") return "object[]";
-
             else return fullname;
         }
 
@@ -83,7 +84,8 @@ namespace DummyMaker
                 for (int i = 0; i < gtype.GenericArguments.Count; i++)
                 {
                     TypeReference argType = gtype.GenericArguments[i];
-                    fullname += GetSystemTypeName(argType.FullName);
+
+                    fullname += GetSystemTypeName(argType);
                     if (i != (gtype.GenericArguments.Count - 1))
                         fullname += ", ";
                 }
@@ -91,7 +93,7 @@ namespace DummyMaker
                 return fullname;
             }
             else 
-                return GetSystemTypeName(param.ParameterType.FullName);
+                return GetSystemTypeName(param.ParameterType);
         }
 
         private static string GetMethodFullName(MethodDefinition method)
