@@ -246,7 +246,7 @@ namespace DummyMaker
             float percent = methodRewrited * 100 / methodList.Count;
             System.Console.WriteLine(percent+"% methods rewrited.");
 
-            string dummyName = "dummy_" + assemblyName;
+            string dummyName = assemblyName + ".dummy";
             System.IO.File.WriteAllBytes(dummyName,dummyBuffer);
             System.Console.WriteLine(dummyName+" is writed.");
         }
