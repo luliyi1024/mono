@@ -752,6 +752,30 @@
 				>
 			</File>
 			<File
+				RelativePath="..\mono\utils\FileHook.cpp"
+				>
+				<FileConfiguration
+					Name="Debug_eglib|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\mono\utils\FileHookCustom.cpp"
+				>
+				<FileConfiguration
+					Name="Debug_eglib|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						CompileAs="2"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath="..\mono\utils\lululog.c"
 				>
 			</File>

@@ -1207,6 +1207,11 @@ static const char info[] =
 #endif
 
 #ifdef PLATFORM_WIN32
+
+// lulu FileHook function declare, defined in FileHook.cpp
+void FileHookInit();
+void FileHookRelease();
+
 BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 {
 	if (!GC_DllMain (module_handle, reason, reserved))
@@ -1216,8 +1221,10 @@ BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 	{
 	case DLL_PROCESS_ATTACH:
 		mono_install_runtime_load (mini_init);
+		FileHookInit();//lulu FileHookInit
 		break;
 	case DLL_PROCESS_DETACH:
+		FileHookRelease();//lulu FileHookRelease
 #ifdef USE_COREE
 		if (coree_module_handle)
 			FreeLibrary (coree_module_handle);
