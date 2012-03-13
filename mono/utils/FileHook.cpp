@@ -1,3 +1,5 @@
+// lulu FileHook.cpp
+
 #include <windows.h>
 
 const int HSIZE = 6;

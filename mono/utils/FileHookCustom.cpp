@@ -1,6 +1,7 @@
 // lulu FileHookCustom.cpp
 
 #include <windows.h>
+#include <Shlwapi.h>
 #include <set>
 
 extern "C"{
@@ -9,6 +10,7 @@ extern "C"{
 
 struct CUSTOMFILE{
 	HANDLE realFile;
+	WCHAR fileName[MAX_PATH];
 };
 
 std::set<CUSTOMFILE*> g_customFileSet;
@@ -22,7 +24,7 @@ DWORD WINAPI ApiGetFileSize(HANDLE hFile,LPDWORD lpFileSizeHigh);
 
 void WINAPI CustomInit()
 {
-	x_log(XLOG_LOG,"FileHook CustomInit\n");
+	x_log(XLOG_OK,"FileHook CustomInit\n");
 }
 
 void WINAPI CustomRelease()
@@ -37,7 +39,7 @@ void WINAPI CustomRelease()
 	}
 	g_customFileSet.clear();
 
-	x_log(XLOG_LOG,"FileHook CustomRelease\n");
+	x_log(XLOG_OK,"FileHook CustomRelease\n");
 }
 
 BOOL WINAPI IsCustomFile(LPCWSTR lpFileName)
@@ -63,15 +65,19 @@ HANDLE WINAPI CustomCreateFileW(LPCWSTR lpFileName,DWORD dwDesiredAccess,DWORD d
 	c->realFile = ApiCreateFileW(lpFileName,dwDesiredAccess,dwShareMode,lpSecurityAttributes,dwCreationDisposition,dwFlagsAndAttributes,hTemplateFile);
 	g_customFileSet.insert(c);
 	HANDLE h = (HANDLE)c;
-	x_log(XLOG_LOG,"CreateFileW %S 0x%x\n",lpFileName,h);
+
+	wcsncpy(c->fileName,lpFileName,MAX_PATH);
+	PathStripPathW(c->fileName);
+
+	x_log(XLOG_LOG,"FileHook CreateFileW %S 0x%x\n",lpFileName,h);
 	return h;
 }
 
 BOOL WINAPI CustomCloseHandle(HANDLE hObject)
 {
-	x_log(XLOG_LOG,"CloseHandle 0x%x\n",hObject);
-
 	CUSTOMFILE *custom = (CUSTOMFILE*)hObject;
+	x_log(XLOG_DEBUG,"FileHook CloseHandle 0x%x %S\n",hObject,custom->fileName);
+
 	BOOL ret = ApiCloseHandle(custom->realFile);
 	delete custom;
 	g_customFileSet.erase(custom);
@@ -82,25 +88,29 @@ BOOL WINAPI CustomReadFile(HANDLE hFile,LPVOID lpBuffer,DWORD nNumberOfBytesToRe
 {
 	CUSTOMFILE *custom = (CUSTOMFILE*)hFile;
 	BOOL ret = ApiReadFile(custom->realFile,lpBuffer,nNumberOfBytesToRead,lpNumberOfBytesRead,lpOverlapped);
-	x_log(XLOG_LOG,"ReadFile (hFile:0x%x, Bytes:%d)\n",hFile,nNumberOfBytesToRead);
+	x_log(XLOG_DEBUG,"FileHook ReadFile 0x%x Bytes:%d/%d %S\n",hFile,*lpNumberOfBytesRead,nNumberOfBytesToRead,custom->fileName);
 	return ret;
 }
 
 DWORD WINAPI CustomGetFileType(HANDLE hFile)
 {
-	x_log(XLOG_LOG,"GetFileType 0x%x\n",hFile);
-	return ApiGetFileType(((CUSTOMFILE*)hFile)->realFile);
+	CUSTOMFILE *custom = (CUSTOMFILE*)hFile;
+	x_log(XLOG_DEBUG,"FileHook GetFileType 0x%x %S\n",hFile,custom->fileName);
+	return ApiGetFileType(custom->realFile);
 }
 
 DWORD WINAPI CustomGetFileSize(HANDLE hFile,LPDWORD lpFileSizeHigh)
 {
-	x_log(XLOG_LOG,"GetFileSize 0x%x\n",hFile);
-	return ApiGetFileSize(((CUSTOMFILE*)hFile)->realFile,lpFileSizeHigh);
+	CUSTOMFILE *custom = (CUSTOMFILE*)hFile;
+	DWORD s = ApiGetFileSize(custom->realFile,lpFileSizeHigh);
+	x_log(XLOG_DEBUG,"FileHook GetFileSize 0x%x size:%d %S\n",hFile,s,custom->fileName);
+	return s;
 }
 
 DWORD WINAPI CustomSetFilePointer(HANDLE hFile,LONG lDistanceToMove,PLONG lpDistanceToMoveHigh,DWORD dwMoveMethod)
 {
-	x_log(XLOG_LOG,"SetFilePointer 0x%x\n",hFile);
-	return ApiSetFilePointer(((CUSTOMFILE*)hFile)->realFile,lDistanceToMove,lpDistanceToMoveHigh,dwMoveMethod);
+	CUSTOMFILE *custom = (CUSTOMFILE*)hFile;
+	x_log(XLOG_DEBUG,"FileHook SetFilePointer 0x%x dis:%d mode:%d %S\n",hFile,lDistanceToMove,dwMoveMethod,custom->fileName);
+	return ApiSetFilePointer(custom->realFile,lDistanceToMove,lpDistanceToMoveHigh,dwMoveMethod);
 }
 

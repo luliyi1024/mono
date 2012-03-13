@@ -48,6 +48,7 @@
 #include <mono/metadata/attach.h>
 #include "mono/utils/mono-counters.h"
 #include <mono/utils/gc_wrapper.h>
+#include <mono/utils/lululog.h>//lulu include
 
 #include "mini.h"
 #include "jit.h"
@@ -1220,6 +1221,7 @@ BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
+		x_log_init();//lulu x_log_init
 		mono_install_runtime_load (mini_init);
 		FileHookInit();//lulu FileHookInit
 		break;
@@ -1229,6 +1231,7 @@ BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 		if (coree_module_handle)
 			FreeLibrary (coree_module_handle);
 #endif
+		x_log_release();//lulu x_log_release
 		break;
 	}
 	return TRUE;

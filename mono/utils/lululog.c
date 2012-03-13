@@ -6,8 +6,29 @@
 #include <stdlib.h>
 
 #ifdef _DEBUG
+char *logmode = "DEBUG";
+#else
+char *logmode = "RELEASE";
+#endif
 
-static FILE *g_logfile = 0;
+FILE *g_logfile = 0;
+
+void x_log_init()
+{
+	if (g_logfile == 0){
+		g_logfile = fopen("monox.log","w");
+		x_log(XLOG_OK,"start monox log %s mode\n",logmode);
+	}
+}
+
+void x_log_release()
+{
+	if (g_logfile != 0){
+		x_log(XLOG_OK,"end monox log\n");
+		fclose(g_logfile);
+		g_logfile = 0;
+	}
+}
 
 void
 x_log(int flag, const char *format, ...)
@@ -16,15 +37,17 @@ x_log(int flag, const char *format, ...)
 	va_list args;
 	va_start (args, format);
 
-	if (g_logfile == 0){
-		g_logfile = fopen("lululog.txt","w");
-	}
-
 	switch(flag){
 		case XLOG_OK:flagStr =      "[OK]      ";break;
 		case XLOG_FAILED:flagStr =  "[FAILED]  ";break;
 		case XLOG_WARNING:flagStr = "[WARNING] ";break;
 		case XLOG_LOG:flagStr =     "[LOG]     ";break;
+#ifdef _DEBUG
+		case XLOG_DEBUG:flagStr =   "[DEBUG]   ";break;
+		default: flagStr =          "[UNKNOWN] ";break;
+#else
+		default: return;
+#endif
 	}
 
 	fprintf(g_logfile,flagStr);
@@ -33,13 +56,6 @@ x_log(int flag, const char *format, ...)
 
 	fflush(g_logfile);
 }
-
-#else
-
-void x_log(const char *format, ...){}
-
-#endif
-
 
 #ifndef _LIB_
 
@@ -71,7 +87,7 @@ char* x_load_owner_image_buffer(const char *name, unsigned int *size)
 
 	x_log(XLOG_LOG,"replace file mono_image_open: %s %d\n",new_name,*size);
 
-	buffer = malloc(*size);
+	buffer = (char*)malloc(*size);
 
 	fread(buffer,1,*size,fp);
 	fclose(fp);
