@@ -2022,6 +2022,7 @@
 # ifdef X86_64
 #   define MACH_TYPE "X86_64"
 #   define ALIGNMENT 8
+#	define LARGE_CONFIG // lulu 64位平台必须设置此标志，使可分配内存可以超过4GB，否则 GC 会报错
 #   define CPP_WORDSZ 64
 #   ifndef HBLKSIZE
 #     define HBLKSIZE 4096

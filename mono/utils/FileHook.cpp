@@ -155,6 +155,18 @@ DWORD WINAPI _SetFilePointer(HANDLE hFile,LONG lDistanceToMove,PLONG lpDistanceT
 }
 
 /////////////
+#ifdef WIN64
+
+extern "C" void FileHookInit()
+{
+}
+
+extern "C" void FileHookRelease()
+{
+}
+
+#else
+
 extern "C" void FileHookInit()
 {
 	if (g_Inited) return;
@@ -184,3 +196,5 @@ extern "C" void FileHookRelease()
 	CustomRelease();
 	g_Inited = false;
 }
+
+#endif
