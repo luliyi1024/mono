@@ -1120,14 +1120,14 @@ mono_image_open_from_data_with_name (char *data, guint32 data_len, gboolean need
 		img = mono_image_open_from_data_with_name_internal(buffer,len,need_copy,status,refonly,name);
 		x_release_image_buffer(buffer);
 
-		if (img != 0) x_log(XLOG_OK,"(owner image) mono_image_open_from_data_with_name: %s\n",name);
+		if (img != 0) x_log(XLOG_DEBUG,"(owner image) mono_image_open_from_data_with_name: %s\n",name);
 		else x_log(XLOG_FAILED,"(owner image) mono_image_open_from_data_with_name: %s\n",name);
 
 		return img;
 	}
 
 	img = mono_image_open_from_data_with_name_internal(data,data_len,need_copy,status,refonly,name);
-	if (img != 0) x_log(XLOG_OK,"mono_image_open_from_data_with_name: %s\n",name);
+	if (img != 0) x_log(XLOG_DEBUG,"mono_image_open_from_data_with_name: %s\n",name);
 	else x_log(XLOG_FAILED,"mono_image_open_from_data_with_name: %s\n",name);
 
 	return img;
@@ -1271,7 +1271,7 @@ mono_image_open_full (const char *fname, MonoImageOpenStatus *status, gboolean r
 	image = do_mono_image_open (fname, status, TRUE, TRUE, refonly);
 
 	//lulu log
-	if (image != NULL) x_log(XLOG_OK,"(load) mono_image_open_full: %s\n",fname);
+	if (image != NULL) x_log(XLOG_DEBUG,"(load) mono_image_open_full: %s\n",fname);
 	else x_log(XLOG_FAILED,"mono_image_open_full: %s\n",fname);
 
 	if (image == NULL)

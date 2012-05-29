@@ -69,7 +69,7 @@ HANDLE WINAPI CustomCreateFileW(LPCWSTR lpFileName,DWORD dwDesiredAccess,DWORD d
 	wcsncpy(c->fileName,lpFileName,MAX_PATH);
 	PathStripPathW(c->fileName);
 
-	x_log(XLOG_LOG,"FileHook CreateFileW %S 0x%x\n",lpFileName,h);
+	x_log(XLOG_DEBUG,"FileHook CreateFileW %S 0x%x\n",lpFileName,h);
 	return h;
 }
 
