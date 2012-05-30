@@ -63,6 +63,7 @@ mono_object_get_size
 
 ;//lulu
 x_log_wstring
+x_log_mask
 
 ;Original Mono Exports
 mono_add_internal_call

@@ -22,6 +22,8 @@ char *logmode = "RELEASE";
 
 FILE *g_log_file = 0;
 
+int g_log_mask = XLOG_OK | XLOG_FAILED | XLOG_WARNING | XLOG_LOG | XLOG_DEBUG;
+
 void x_log_init()
 {
 	AllocConsole();
@@ -39,23 +41,29 @@ void x_log_release()
 	FreeConsole();
 }
 
+void
+x_log_mask(int mask)
+{
+	x_log(XLOG_OK,"set log mask %d\n", mask);
+	g_log_mask = mask;
+}
+
 int
 x_log_wbegin(const wchar_t* module, int flag)
 {
 	DWORD color = FOREGROUND_WHITE;
 	wchar_t* flagStr = L"";
 
+	if ((flag & g_log_mask) == 0)
+		return 0;
+
 	switch(flag){
 		case XLOG_OK:flagStr =      L"[OK]\t"; color = FOREGROUND_GREEN;break;
 		case XLOG_FAILED:flagStr =  L"[FAIL]\t"; color = FOREGROUND_LIGHT_RED; break;
 		case XLOG_WARNING:flagStr = L"[WARN]\t"; color = FOREGROUND_LIGHT_YELLOW; break;
 		case XLOG_LOG:flagStr =     L"[LOG]\t";break;
-#ifdef _DEBUG
 		case XLOG_DEBUG:flagStr =   L"[DEBUG]\t";break;
 		default: flagStr =          L"[UNKNW]\t"; color = FOREGROUND_LIGHT_RED; break;
-#else
-		default: return 0;
-#endif
 	}
 
 	wprintf(L"[%s]\t", module);

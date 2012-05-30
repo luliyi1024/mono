@@ -1,12 +1,12 @@
 //lulu add for additive functions
 #pragma once
 
-#define XLOG_UNKNOWN 0
-#define XLOG_OK 1
-#define XLOG_FAILED 2
-#define XLOG_WARNING 3
-#define XLOG_LOG 4
-#define XLOG_DEBUG 5
+#define XLOG_UNKNOWN	0x0
+#define XLOG_OK			0x001
+#define XLOG_FAILED		0x002
+#define XLOG_WARNING	0x004
+#define XLOG_LOG		0x008
+#define XLOG_DEBUG		0x010
 
 void x_log_init();
 void x_log_release();
