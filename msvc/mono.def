@@ -61,6 +61,8 @@ mono_object_get_size
 ;mono_image_open_raw
 ;g_list_prepend
 
+;//lulu
+x_log_wstring
 
 ;Original Mono Exports
 mono_add_internal_call

@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <Windows.h>
+#include <malloc.h>
 
 #ifdef _DEBUG
 char *logmode = "DEBUG";
@@ -19,53 +20,90 @@ char *logmode = "RELEASE";
 #define FOREGROUND_LIGHT_GREEN (FOREGROUND_GREEN | FOREGROUND_INTENSITY)
 #define FOREGROUND_LIGHT_YELLOW (FOREGROUND_YELLOW | FOREGROUND_INTENSITY)
 
+FILE *g_log_file = 0;
+
 void x_log_init()
 {
 	AllocConsole();
 	SetConsoleOutputCP(936);
     SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_WHITE);
 	freopen( "CON", "w", stdout );
+	g_log_file = _wfopen(L"cout.log",L"w");
 	x_log(XLOG_OK,"start monox log %s mode\n",logmode);
 }
 
 void x_log_release()
 {
 	x_log(XLOG_OK,"end monox log\n");
+	fclose(g_log_file);
 	FreeConsole();
+}
+
+int
+x_log_wbegin(const wchar_t* module, int flag)
+{
+	DWORD color = FOREGROUND_WHITE;
+	wchar_t* flagStr = L"";
+
+	switch(flag){
+		case XLOG_OK:flagStr =      L"[OK]\t"; color = FOREGROUND_GREEN;break;
+		case XLOG_FAILED:flagStr =  L"[FAIL]\t"; color = FOREGROUND_LIGHT_RED; break;
+		case XLOG_WARNING:flagStr = L"[WARN]\t"; color = FOREGROUND_LIGHT_YELLOW; break;
+		case XLOG_LOG:flagStr =     L"[LOG]\t";break;
+#ifdef _DEBUG
+		case XLOG_DEBUG:flagStr =   L"[DEBUG]\t";break;
+		default: flagStr =          L"[UNKNW]\t"; color = FOREGROUND_LIGHT_RED; break;
+#else
+		default: return 0;
+#endif
+	}
+
+	wprintf(L"[%s]\t", module);
+	fwprintf(g_log_file,L"[%s]\t", module);
+
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
+	
+	wprintf(flagStr);
+	fwprintf(g_log_file,flagStr);
+	return 1;
+}
+
+void
+x_log_end()
+{
+	fflush(stdout);
+	fflush(g_log_file);
+    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_WHITE);
+}
+
+void
+x_log_wstring(const wchar_t* module, int flag, const wchar_t* value)
+{
+	if (x_log_wbegin(module,flag)){
+
+		int len;
+		len = WideCharToMultiByte(CP_ACP, 0, value, -1, NULL, 0, NULL, NULL);
+		{
+			char *str = (char*)alloca(len+1);
+			WideCharToMultiByte(CP_ACP, 0, value, -1, str, len + 1, NULL, NULL);
+			printf("%s\n",str);
+			fprintf(g_log_file,"%s\n",str);
+		}
+		x_log_end();
+	}
 }
 
 void
 x_log(int flag, const char *format, ...)
 {
-	DWORD color = FOREGROUND_WHITE;
-	char* flagStr = "";
 	va_list args;
 	va_start (args, format);
-
-
-	switch(flag){
-		case XLOG_OK:flagStr =      "[OK]\t"; color = FOREGROUND_GREEN;break;
-		case XLOG_FAILED:flagStr =  "[FAIL]\t"; color = FOREGROUND_LIGHT_RED; break;
-		case XLOG_WARNING:flagStr = "[WARN]\t"; color = FOREGROUND_LIGHT_YELLOW; break;
-		case XLOG_LOG:flagStr =     "[LOG]\t";break;
-#ifdef _DEBUG
-		case XLOG_DEBUG:flagStr =   "[DEBUG]\t";break;
-		default: flagStr =          "[UNKNW]\t"; color = FOREGROUND_LIGHT_RED; break;
-#else
-		default: return;
-#endif
+	if (x_log_wbegin(L"mono",flag)){
+		vprintf(format,args);
+		vfprintf(g_log_file,format,args);
+		va_end (args);
+		x_log_end();
 	}
-
-	printf("[mono]\t");
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), color);
-	
-	printf(flagStr);
-	vprintf(format,args);
-	va_end (args);
-
-	fflush(stdout);
-
-    SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_WHITE);
 }
 
 /*
