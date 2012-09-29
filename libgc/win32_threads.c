@@ -379,8 +379,12 @@ void GC_push_all_stacks()
       } else {
         CONTEXT context;
         context.ContextFlags = CONTEXT_INTEGER|CONTEXT_CONTROL;
-        if (!GetThreadContext(thread_table[i].handle, &context))
-	  ABORT("GetThreadContext failed");
+        if (!GetThreadContext(thread_table[i].handle, &context)){
+			// orig
+			//ABORT("GetThreadContext failed");
+			// lulu
+			continue;
+		}
 
         /* Push all registers that might point into the heap.  Frame	*/
         /* pointer registers are included in case client code was	*/

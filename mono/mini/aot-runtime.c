@@ -51,6 +51,7 @@
 #include <mono/utils/mono-mmap.h>
 #include "mono/utils/mono-compiler.h"
 #include <mono/utils/mono-counters.h>
+#include <mono/utils/lululog.h>
 
 #include "mini.h"
 #include "version.h"
@@ -193,10 +194,12 @@ load_image (MonoAotModule *module, int index)
 		return NULL;
 	}
 
+	if (0){//lulu do not check the AOT guid
 	if (strcmp (assembly->image->guid, module->image_guids [index])) {
 		mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT module %s is out of date (Older than dependency %s).\n", module->aot_name, module->image_names [index].name);
 		module->out_of_date = TRUE;
 		return NULL;
+	}
 	}
 
 	module->image_table [index] = assembly->image;
@@ -941,7 +944,12 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 			sofile = load_aot_module_from_cache (assembly, &aot_name);
 		else {
 			char *err;
-			aot_name = g_strdup_printf ("%s%s", assembly->image->name, SHARED_EXT);
+						
+			//lulu get the custom aot dll file name
+			//if return null, use orig one
+			aot_name = (char*)x_get_aot_dll_name(assembly->image->name);
+			if (!aot_name)
+				aot_name = g_strdup_printf ("%s%s", assembly->image->name, SHARED_EXT);
 
 			sofile = mono_dl_open (aot_name, MONO_DL_LAZY, &err);
 
@@ -972,9 +980,11 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 		usable = FALSE;
 	}
 	else {
+		if (0){//lulu do not check the AOT guid
 		if (!saved_guid || strcmp (assembly->image->guid, saved_guid)) {
 			mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT module %s is out of date.\n", aot_name);
 			usable = FALSE;
+		}
 		}
 	}
 
@@ -1160,8 +1170,12 @@ load_aot_module (MonoAssembly *assembly, gpointer user_data)
 			exit (1);
 		}
 	}
-	else
+	else{
 		mono_trace (G_LOG_LEVEL_INFO, MONO_TRACE_AOT, "AOT loaded AOT Module for %s.\n", assembly->image->name);
+
+		// lulu log
+		x_log(XLOG_OK,"AOT loaded AOT Module for %s\n", assembly->image->name);
+	}
 }
 
 /*
@@ -2019,6 +2033,30 @@ load_method (MonoDomain *domain, MonoAotModule *amodule, MonoImage *image, MonoM
 	MonoJitInfo *jinfo = NULL;
 	guint8 *code, *info;
 
+	//lulu check the method IL byte code
+	//if byte[0]==0xEE then use AOT native code
+	//else use JIT code
+/*	{
+		char* fname;
+		MonoMethodHeader *header = 0;
+		if (!method)
+			method = mono_get_method (image, token, NULL);
+		fname = mono_method_full_name(method, TRUE);
+		header = mono_method_get_header(method);
+		if (header && header->code){
+			if (header->code[0] != 0xEE){
+				x_log(XLOG_FAILED,"!NOT 0xEE AOT load_method: %s\n",fname);
+				return NULL;
+			}
+			else{
+				x_log(XLOG_OK,"AOT load_method: %s\n",fname);
+			}
+		}
+		else{
+			x_log(XLOG_FAILED,"!NO HEADER AOT load_method: %s\n",fname);
+		}
+	}*/
+
 	if (mono_profiler_get_events () & MONO_PROFILE_ENTER_LEAVE)
 		return NULL;
 
@@ -2167,6 +2205,8 @@ load_method (MonoDomain *domain, MonoAotModule *amodule, MonoImage *image, MonoM
 
 	if (from_plt && klass && !klass->generic_container)
 		mono_runtime_class_init (mono_class_vtable (domain, klass));
+
+	x_log(XLOG_OK,"AOT load_method: %s\n",mono_method_full_name (method, TRUE));//lulu log
 
 	return code;
 

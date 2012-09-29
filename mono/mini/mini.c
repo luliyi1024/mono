@@ -4230,6 +4230,28 @@ mono_jit_compile_method_inner (MonoMethod *method, MonoDomain *target_domain, in
 	guint32 prof_options;
 
 #ifdef MONO_USE_AOT_COMPILER
+	//lulu check the method IL byte code
+	//if byte[0]==0xEE then use AOT native code
+	//else use JIT code
+/*	if (opt & MONO_OPT_AOT) {
+		MonoMethodHeader *header = mono_method_get_header(method);
+		if (header && header->code){
+			if (header->code[0] == 0xEE){
+				MonoDomain *domain = mono_domain_get ();
+
+				mono_class_init (method->klass);
+
+				if ((code = mono_aot_get_method (domain, method))) {
+					vtable = mono_class_vtable (domain, method->klass);
+					g_assert (vtable);
+					mono_runtime_class_init (vtable);
+
+					return code;
+				}
+			}
+		}
+	}*/
+
 	if (opt & MONO_OPT_AOT) {
 		MonoDomain *domain = mono_domain_get ();
 

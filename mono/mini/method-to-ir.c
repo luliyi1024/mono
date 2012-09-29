@@ -51,6 +51,7 @@
 #include <mono/metadata/monitor.h>
 #include <mono/utils/mono-compiler.h>
 #include <mono/metadata/mono-basic-block.h>
+#include <mono/utils/lululog.h>
 
 #include "mini.h"
 #include "trace.h"
@@ -4358,6 +4359,15 @@ inline_method (MonoCompile *cfg, MonoMethod *cmethod, MonoMethodSignature *fsig,
 	gboolean ret_var_set, prev_ret_var_set;
 
 	g_assert (cfg->exception_type == MONO_EXCEPTION_NONE);
+
+	//lulu AOT method can not be inline
+	cheader = mono_method_get_header(cmethod);
+	if (cheader && cheader->code){
+		if (cheader->code[0] == 0xEE){
+			x_log(XLOG_WARNING,"AOT method cannot be inline: %s used by %s (assembly: %s)\n",mono_method_full_name (cmethod, TRUE), mono_method_full_name (cfg->method, TRUE),cfg->method->klass->image->name);
+			return 0;
+		}	
+	}
 
 #if (MONO_INLINE_CALLED_LIMITED_METHODS)
 	if ((! inline_allways) && ! check_inline_called_method_name_limit (cmethod))

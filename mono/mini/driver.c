@@ -48,6 +48,7 @@
 #include <mono/metadata/attach.h>
 #include "mono/utils/mono-counters.h"
 #include <mono/utils/gc_wrapper.h>
+#include <mono/utils/lululog.h>//lulu include
 
 #include "mini.h"
 #include "jit.h"
@@ -1207,6 +1208,11 @@ static const char info[] =
 #endif
 
 #ifdef PLATFORM_WIN32
+
+// lulu FileHook function declare, defined in FileHook.cpp
+void FileHookInit();
+void FileHookRelease();
+
 BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 {
 	if (!GC_DllMain (module_handle, reason, reserved))
@@ -1215,13 +1221,17 @@ BOOL APIENTRY DllMain (HMODULE module_handle, DWORD reason, LPVOID reserved)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
+		x_log_init();//lulu x_log_init
 		mono_install_runtime_load (mini_init);
+		FileHookInit();//lulu FileHookInit
 		break;
 	case DLL_PROCESS_DETACH:
+		FileHookRelease();//lulu FileHookRelease
 #ifdef USE_COREE
 		if (coree_module_handle)
 			FreeLibrary (coree_module_handle);
 #endif
+		x_log_release();//lulu x_log_release
 		break;
 	}
 	return TRUE;

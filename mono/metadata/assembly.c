@@ -32,6 +32,8 @@
 #include <mono/metadata/reflection.h>
 #include <mono/metadata/coree.h>
 
+#include <mono/utils/lululog.h>//lulu
+
 #ifndef PLATFORM_WIN32
 #include <sys/types.h>
 #include <unistd.h>
@@ -1560,6 +1562,8 @@ MonoAssembly *
 mono_assembly_load_from (MonoImage *image, const char *fname,
 			 MonoImageOpenStatus *status)
 {
+	x_log(XLOG_LOG,"mono_assembly_load_from: %s\n",fname);//lulu log
+
 	return mono_assembly_load_from_full (image, fname, status, FALSE);
 }
 
